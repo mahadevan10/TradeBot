@@ -1,6 +1,4 @@
 import asyncio
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
 from datetime import datetime
 
 from agents.sub_agents import sentiment_agent, technical_agent 
