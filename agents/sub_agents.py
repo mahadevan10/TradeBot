@@ -18,16 +18,7 @@ technical_agent = Agent(
     instructions=["Use technical indicators to determine if the trend is Bullish or Bearish."]
 )
 
-# 2. The Options Specialist Agent 
-quant_agent = Agent(
-    name="Quant Specialist",
-    role="Analyze volatility and option pricing.",
-    model=OpenAIChat(id="gpt-4o-mini"),
-    tools=[get_options_data],
-    instructions=["Analyze Implied Volatility (IV) to recommend Credit vs Debit spreads."]
-)
-
-# 3. The news sentiment analysis Agent
+# 2. The news sentiment analysis Agent
 sentiment_agent = Agent(
     name="News Analyst",
     role="News and Volatility Catalyst Scanner",

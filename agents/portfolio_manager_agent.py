@@ -3,35 +3,71 @@ from agno.team import Team
 from agno.models.openai import OpenAIChat
 
 from dotenv import load_dotenv
-
 load_dotenv()
+
+from pydantic import BaseModel, Field
+from typing import List, Union, Literal
+
+class TradeLeg(BaseModel):
+    action: str = Field(..., description="BUY or SELL")
+    contract_type: str = Field(..., description="CALL or PUT")
+    strike_price: float = Field(..., description="The specific strike price (e.g., 150.0)")
+    premium: float = Field(..., description="The price of the option leg")
+
+class TradeSignal(BaseModel):
+    ticker: str
+    signal: str = Field(..., description="BULLISH, BEARISH, NEUTRAL, or NO_TRADE")
+    strategy_name: str = Field(..., description="e.g., 'Bull Put Spread', 'Iron Condor'")
+    
+    # Specific Trade Details (Extracted from Quant Report)
+    legs: List[TradeLeg] = Field(..., description="List of option legs to execute")
+    max_profit: Union[float, Literal["Unlimited"]] = Field(
+        ..., 
+        description="Max profit in $. If profit is infinite (e.g. Long Call), strictly return the string 'Unlimited'."
+    )
+    max_loss: Union[float, Literal["Unlimited"]] = Field(
+        ..., 
+        description="Max risk in $. If risk is infinite (e.g. Short Straddle), strictly return the string 'Unlimited'."
+    )
+    risk_reward_ratio: str = Field(..., description="e.g., '1:2.5'")
+    
+    # Validation & Context
+    breakeven_point: str = Field(..., description="Price level description (e.g. 'Above $145.50')")
+    conviction_score: int = Field(..., description="0-10 score based on News/Tech alignment")
+    reasoning: str = Field(..., description="Final synthesis of why this trade was chosen")
     
 
-# The Synthesizer
 # The Manager does NOT have tools or team members. It just has a big brain.
 portfolio_manager = Agent(
     name="Portfolio Manager",
-    role="Head Trader",
+    role="Final Gatekeeper & Trade Structurer",
     model=OpenAIChat(id="gpt-4o"),
-    # No members list needed here since we are using the Async 'War Room' approach
+    
+    # Enforce the Strict JSON Output
+    output_schema=TradeSignal,
+    
     instructions=[
-        "You are the Head Trader. You have received reports from your team.",
-        "1. ANALYZE the News Report First:",
-        "   - **CASE A: HIGH_VOLATILITY_EVENT detected (Earnings/FDA):**",
-        "     - IGNORE the Technical Trend (charts break during earnings).",
-        "     - IGNORE high IV (it is expected).",
-        "     - RECOMMENDATION: 'Long Straddle' (if aggressive) or 'Long Strangle' (if conservative).",
-        "     - REASONING: 'Betting on massive price expansion due to upcoming event.'",
-        "",
-        "   - **CASE B: NEGATIVE_CATALYST detected (Scandal/Lawsuit):**",
-        "     - RECOMMENDATION: 'NO TRADE' or 'Protective Put'.",
-        "     - REASONING: 'Too much unpredictable downside risk.'",
-        "",
-        "   - **CASE C: Normal Market (No binary events):**",
-        "     - Look at the Technical Report for Trend (Bullish/Bearish).",
-        "     - Look at the Quant Report for IV (Cheap vs Expensive).",
-        "     - Synthesize a standard strategy (e.g., Bull Call Spread, Iron Condor).",
-        "",
-        "2. Final Output must be a JSON: {Strategy, Ticker, Action, Risk_Profile, Reasoning}."
-    ]
+        "You are the Chief Investment Officer (CIO).",
+        "You have received a fully engineered trade plan from your Quant Developer, based on News and Technicals.",
+        
+        "**YOUR RESPONSIBILITIES:**",
+        "1. **Validation (The Sanity Check):**",
+        "   - Check if the Strategy matches the News Sentiment.",
+        "   - *CRITICAL:* If News reported a 'High Risk/Lawsuit' but the Quant coded a Bullish trade -> OVERRIDE signal to 'NO_TRADE'.",
+        
+        "2. **Extraction (Data Entry):**",
+        "   - Read the 'Quant Calculation' report carefully.",
+        "   - Extract the EXACT Strikes, Premiums, Max Profit, and Max Loss values printed by the Python script.",
+        "   - Do not calculate these yourself; trust the Code's output.",
+        
+        "3. **Formatting:**",
+        "   - Fill out the 'TradeSignal' JSON fields.",
+        "   - Calculate 'Risk/Reward Ratio' simply as (Max Profit / Max Loss).",
+        "   - For 'conviction_score', give a 10 if News, Tech, and Math all agree. Deduct points for conflicting signals.",
+        
+        "4. **Final Output:**",
+        "   - Return ONLY the structured JSON object."
+    ],
+    # Markdown is False because we want raw JSON for the Pydantic model
+    markdown=False, 
 )
