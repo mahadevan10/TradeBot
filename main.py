@@ -1,9 +1,10 @@
 import asyncio
 from datetime import datetime
 
-from agents.sub_agents import sentiment_agent, technical_agent 
+from agents.ta_agent import technical_agent 
 from agents.portfolio_manager_agent import portfolio_manager
 from agents.quant_developer import quant_developer
+from agents.news_agent import sentiment_agent
 
 async def run_smart_trading_floor(ticker: str):
     print(f"⚡ [Phase 1] Gathering Intelligence for {ticker}...")
@@ -46,7 +47,7 @@ async def run_smart_trading_floor(ticker: str):
         - PRINT result: "STRATEGY: [Name] | LEGS: [Details] | PROFIT: [Amount]"
         """
 
-    print(f"⚡ [Phase 3] Quant Developer is engineering the best trade...")
+    print(f"⚡ [Phase 2] Quant Developer is engineering the best trade...")
     # This runs sequentially after we know the trend
     quant_response = await quant_developer.arun(quant_prompt)
     
